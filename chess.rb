@@ -35,7 +35,9 @@ class Game
 		else
 			board.render
 			puts "Invalid move. Try again."
+			# play! <---- This probably goes here once pawn promotion functionality is implemented.
 		end
+		# Pawn promotion code probably goes here. Need to DRY out current code before adding this functionality.
 		play!
 	end
 
@@ -68,6 +70,10 @@ class Player
 		end
 	end
 
+	def promote_pawn!(board, promoted_type)
+		board.promote_pawn(promoted_type)
+	end
+
 	def offer_draw!
 	end
 
@@ -76,7 +82,7 @@ class Player
 end
 
 class Board
-	attr_reader :board_arr, :captured_pieces
+	attr_reader :board_arr, :captured_pieces, :player_1, :player_2
 	attr_accessor :pieces
 	def initialize(player_1, player_2)
 		@board_arr = []
@@ -102,9 +108,11 @@ class Board
 			# Piece.new(player_1, :bishop, 4, 4, "B"),
 			# # Piece.new(player_2, :king, 0, 0, "k")
 		]
-		# (0..7).each { |n| @pieces << Piece.new(player_2, :pawn, 1, n, "p") }
-		# (0..7).each { |n| @pieces << Piece.new(player_1, :pawn, 6, n, "P") }
+		(0..7).each { |n| @pieces << Piece.new(player_2, :pawn, 1, n, "p") }
+		(0..7).each { |n| @pieces << Piece.new(player_1, :pawn, 6, n, "P") }
 		@captured_pieces = []
+		@player_1 = player_1
+		@player_2 = player_2
 	end
 
 	def render
@@ -144,6 +152,50 @@ class Board
 		possible_rook_move?(start_coords, move_coords, player) || possible_bishop_move?(start_coords, move_coords, player)
 	end
 
+	def possible_pawn_move?(start_coords, move_coords, player, king_threat_check = false)
+		destination = pieces.find { |piece| piece.coords == move_coords } 
+		pawn = pieces.find { |piece| piece.coords == start_coords }
+		if player == player_1
+			ahead_one = [start_coords[0] - 1, start_coords[1]]
+			ahead_two = [start_coords[0] - 2, start_coords[1]]
+			left_diagonal = [start_coords[0] - 1, start_coords[1] - 1]
+			right_diagonal = [start_coords[0] - 1, start_coords[1] + 1]
+		else 
+			ahead_one = [start_coords[0] + 1, start_coords[1]]
+			ahead_two = [start_coords[0] + 2, start_coords[1]]
+			left_diagonal = [start_coords[0] + 1, start_coords[1] - 1]
+			right_diagonal = [start_coords[0] + 1, start_coords[1] + 1]
+		end
+
+		empty_board_moves = [ahead_one, ahead_two, left_diagonal, right_diagonal].select do |move|
+			(0 <= move[0] && move[0] <= 7) && (0 <= move[1] && move[1] <= 7)
+		end
+
+		empty_board_moves.delete(ahead_two) if pawn.starting_position != start_coords || pieces.find { |piece| piece.coords == ahead_one }
+		
+		if destination
+			empty_board_moves.delete(ahead_one)
+			empty_board_moves.delete(ahead_two)
+		else
+			empty_board_moves.delete(left_diagonal)
+			empty_board_moves.delete(right_diagonal)
+		end
+
+		# Check to make sure moving pawn won't put friendly king in check.
+		unless king_threat_check
+			return false if check?(start_coords, move_coords, player)
+		end
+
+		if empty_board_moves.include?(move_coords)
+			if destination
+				return destination.player != player
+			else
+				return true
+			end		
+		else
+			return false
+		end
+	end
 
 	def possible_knight_move?(start_coords, move_coords, player, king_threat_check = false)
 		destination = pieces.find { |piece| piece.coords == move_coords } 
@@ -163,7 +215,7 @@ class Board
 
 		# Check to make sure moving knight won't put friendly king in check.
 		unless king_threat_check
-			return false if check?(start_coords, move_coords, player)k
+			return false if check?(start_coords, move_coords, player)
 		end
 
 		if empty_board_moves.include?(move_coords)
@@ -281,6 +333,12 @@ class Board
 		end
 	end
 
+	def promote_pawn(pawn, promoted_type)
+		pieces.delete(pawn)
+		promoted_display_char = pieces.find { |piece| piece.type == promoted_type.to_sym }.display_char # <---- Inefficient and ugly!
+		pieces << Piece.new(pawn.player, promoted_type.to_sym, pawn.coords[0], pawn.coords[1], promoted_display_char)
+	end
+
 	def check?(start_coords, move_coords, player)
 		captured_piece = pieces.find {|piece| piece.coords == move_coords }
 		if captured_piece && captured_piece.player != player
@@ -306,6 +364,8 @@ class Board
 			possible_queen_move?(start_coords, move_coords, player, king_threat_check)
 		when "king"
 			possible_king_move?(start_coords, move_coords, player, king_threat_check)
+		when "pawn"
+			possible_pawn_move?(start_coords, move_coords, player, king_threat_check)
 		end
 	end
 
