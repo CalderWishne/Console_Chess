@@ -11,7 +11,6 @@ ALG_NOT = {
 	"h" => 7
 }
 
-#coords: [y,x]
 class Game
 	attr_reader :board, :player_1, :player_2, :current_player
 	def initialize(player_1_name, player_2_name)
@@ -42,9 +41,6 @@ class Game
 
 	def valid_move?(start_coords, move_coords)
 		player_piece = board.pieces.find { |piece| piece.coords == start_coords }
-		# puts player_piece != nil
-		# puts player_piece.player == current_player
-		# puts board.possible_move?(player_piece.type.to_s, start_coords, move_coords, current_player)
 		return player_piece != nil && player_piece.player == current_player &&
 			board.possible_move?(player_piece.type.to_s, start_coords, move_coords, current_player)
 	end
@@ -111,21 +107,6 @@ class Board
 		@captured_pieces = []
 	end
 
-	# def render
-	# 	board_arr = Array.new(64, "_")
-	# 	pieces.each { |piece| board_arr[to_index(piece.coords)] = piece.display_char if piece.alive }
-	# 	puts "   __ __ __ __ __ __ __ __"
-	# 	y_count = 8
-	# 	board_arr.each_slice(8).each do |row|
-	# 		formatted_row = row.map(&:to_s).map{ |content| content.length == 1 ? content + "_" : content[0..1] }
-	# 		puts  y_count.to_s + " |" + formatted_row.join("|") + "|"
-	# 		y_count -= 1
-	# 	end
-	# 	puts "   a  b  c  d  e  f  g  h "
-	# 	puts 
-	# 	puts "Captured: " + captured_pieces.map(&:display_char).join(", ") if !captured_pieces.empty?
-	# end
-
 	def render
 		board_arr = Array.new(64, " ")
 		pieces.each { |piece| board_arr[to_index(piece.coords)] = piece.display_char if piece.alive }
@@ -182,17 +163,7 @@ class Board
 
 		# Check to make sure moving knight won't put friendly king in check.
 		unless king_threat_check
-			return false if check?(start_coords, move_coords, player)
-			# captured_piece = pieces.find {|piece| piece.coords == move_coords }
-			# if captured_piece && captured_piece.player != player
-			# 	pieces.delete(captured_piece)
-			# end
-			# knight = pieces.find { |piece| piece.coords == start_coords }
-			# knight.coords = move_coords
-			# check = in_check?(player)
-			# knight.coords = start_coords
-			# pieces << captured_piece
-			# return false if check
+			return false if check?(start_coords, move_coords, player)k
 		end
 
 		if empty_board_moves.include?(move_coords)
@@ -201,7 +172,6 @@ class Board
 			else
 				return true
 			end		
-			# return true
 		else
 			return false
 		end
@@ -239,16 +209,6 @@ class Board
 		# Check to make sure moving rook won't put friendly king in check.
 		unless king_threat_check
 			return false if check?(start_coords, move_coords, player)
-			# captured_piece = pieces.find {|piece| piece.coords == move_coords }
-			# if captured_piece && captured_piece.player != player
-			# 	pieces.delete(captured_piece)
-			# end
-			# rook = pieces.find { |piece| piece.coords == start_coords }
-			# rook.coords = move_coords
-			# check = in_check?(player)
-			# rook.coords = start_coords
-			# pieces << captured_piece
-			# return false if check
 		end
 
 		return true
@@ -286,16 +246,6 @@ class Board
 		# Check to make sure moving bishop won't put friendly king in check.
 		unless king_threat_check
 			return false if check?(start_coords, move_coords, player)
-			# captured_piece = pieces.find {|piece| piece.coords == move_coords }
-			# if captured_piece && captured_piece.player != player
-			# 	pieces.delete(captured_piece)
-			# end
-			# bishop = pieces.find { |piece| piece.coords == start_coords }
-			# bishop.coords = move_coords
-			# check = in_check?(player)
-			# bishop.coords = start_coords
-			# pieces << captured_piece
-			# return false if check
 		end
 
 		return true
@@ -318,16 +268,6 @@ class Board
 
 		unless king_threat_check
 			return false if check?(start_coords, move_coords, player)
-			# captured_piece = pieces.find {|piece| piece.coords == move_coords }
-			# if captured_piece && captured_piece.player != player
-			# 	pieces.delete(captured_piece)
-			# end
-			# king = pieces.find { |piece| piece.coords == start_coords }
-			# king.coords = move_coords
-			# check = in_check?(player)
-			# king.coords = start_coords
-			# pieces << captured_piece
-			# return false if check
 		end
 
 		if empty_board_moves.include?(move_coords)
@@ -336,7 +276,6 @@ class Board
 			else
 				return true
 			end		
-			# return true
 		else
 			return false
 		end
@@ -365,9 +304,6 @@ class Board
 			possible_knight_move?(start_coords, move_coords, player, king_threat_check)
 		when "queen"
 			possible_queen_move?(start_coords, move_coords, player, king_threat_check)
-		# when "pawn"
-		# 	puts "pawn-move-validator not yet implemented. Outputting true."
-		# 	true
 		when "king"
 			possible_king_move?(start_coords, move_coords, player, king_threat_check)
 		end
@@ -434,47 +370,6 @@ class Board
 	# 	possible
 	# end
 
-	def valid_move?(piece, move_x, move_y)
-		case @type
-		when :pawn
-			valid_pawn_move?(piece, move_x, move_y)
-		when :rook
-			valid_rood_move?(piece, move_x, move_y)
-		when :knight
-			valid_knight_move?(piece, move_x, move_y)
-		when :bishop
-			valid_bishop_move?(piece, move_x, move_y)
-		when :queen 
-			valid_queen_move?(piece, move_x, move_y)
-		when :king
-			valid_king_move?(piece, move_x, move_y)
-		end
-	end
-
-	def valid_pawn_move?(piece, move_x, move_y)
-		true
-	end
-		
-	def valid_rood_move?(piece, move_x, move_y)
-		true
-	end
-			
-	def valid_knight_move?(piece, move_x, move_y)
-		true
-	end
-		
-	def valid_bishop_move?(piece, move_x, move_y)
-		true
-	end
-	
-	def valid_queen_move?(piece, move_x, move_y)
-		true
-	end
-
-	def valid_king_move?(piece, move_x, move_y)
-		true
-	end
-
 	def to_index(coords)
 		coords[0] * 8 + coords[1]
 	end
@@ -482,8 +377,6 @@ class Board
 	def to_coords(idx)
 		[idx / 8, idx % 8]	
 	end
-
-
 end
 
 
@@ -492,8 +385,6 @@ class Piece
 	attr_accessor :type, :x, :y, :coords
 	def initialize(player, type, y, x, display_char)
 		@type = type
-		# @x = x
-		# @y = y
 		@player = player
 		@alive = true
 		@coords = [y,x]
